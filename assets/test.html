@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>连接测试页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .status {
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .links {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .link-btn {
+            display: block;
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .link-btn:hover {
+            transform: translateY(-2px);
+        }
+        .test-result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        .test-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+        .test-item.pass {
+            border-left: 4px solid #28a745;
+        }
+        .test-item.fail {
+            border-left: 4px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ 连接测试成功！</h1>
+        <div class="status success">
+            服务器运行正常
+        </div>
+        <div class="status info">
+            如果能看到这个页面，说明连接正常！
+        </div>
+        <div class="links">
+            <a href="/" class="link-btn">📱 访问桌面版页面</a>
+            <a href="/app.html" class="link-btn">🎮 访问移动版页面</a>
+            <a href="/api/cards" class="link-btn">🔍 测试API接口</a>
+        </div>
+        <div class="test-result" id="testResult">
+            <strong>自动测试结果：</strong>
+            <div id="tests"></div>
+        </div>
+    </div>
+
+    <script>
+        // 自动测试各个端点
+        async function runTests() {
+            const tests = document.getElementById('tests');
+            const endpoints = [
+                { name: '桌面版页面', url: '/' },
+                { name: '移动版页面', url: '/app.html' },
+                { name: 'API接口', url: '/api/cards' }
+            ];
+
+            let results = '';
+
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(endpoint.url, {
+                        method: 'GET',
+                        mode: 'cors'
+                    });
+                    const status = response.ok ? '✅ 通过' : '❌ 失败';
+                    const className = response.ok ? 'pass' : 'fail';
+                    results += `
+                        <div class="test-item ${className}">
+                            <strong>${endpoint.name}</strong><br>
+                            状态: ${status} (${response.status})<br>
+                            URL: ${endpoint.url}
+                        </div>
+                    `;
+                } catch (error) {
+                    results += `
+                        <div class="test-item fail">
+                            <strong>${endpoint.name}</strong><br>
+                            状态: ❌ 连接失败<br>
+                            错误: ${error.message}<br>
+                            URL: ${endpoint.url}
+                        </div>
+                    `;
+                }
+            }
+
+            tests.innerHTML = results;
+        }
+
+        // 页面加载后运行测试
+        window.addEventListener('load', runTests);
+    </script>
+</body>
+</html>

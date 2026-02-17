@@ -123,6 +123,16 @@ async def desktop_app():
         raise HTTPException(status_code=404, detail="index.html not found")
 
 
+@app.get("/test.html")
+async def test_page():
+    """测试页面"""
+    test_path = os.path.join(ASSETS_DIR, "test.html")
+    if os.path.exists(test_path):
+        return FileResponse(test_path)
+    else:
+        raise HTTPException(status_code=404, detail="test.html not found")
+
+
 # ============ 卡牌管理接口 ============
 
 @app.get("/api/cards")

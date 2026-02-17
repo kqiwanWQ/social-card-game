@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI社交模拟卡牌游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            max-width: 480px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .container {
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .search-box {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+        }
+
+        .search-box input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .search-box input::placeholder {
+            color: #999;
+        }
+
+        .btn-add {
+            width: 100%;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-add:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(240, 147, 251, 0.6);
+        }
+
+        .card-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .card-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            margin-right: 15px;
+            overflow: hidden;
+        }
+
+        .card-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-info h3 {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .card-info p {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .card-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: white;
+            padding: 40px 20px;
+        }
+
+        .empty-state p {
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 450px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 20px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+
+        .btn-danger {
+            background: #ff4757;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 20px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* Card Detail Styles */
+        .card-detail-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            margin: 0 auto 15px;
+            overflow: hidden;
+        }
+
+        .card-detail-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-detail-name {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .card-detail-meta {
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .card-detail-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .card-detail-section h4 {
+            font-size: 16px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .card-detail-section p {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .card-detail-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .card-detail-actions button {
+            flex: 1;
+            min-width: calc(50% - 5px);
+        }
+
+        /* Interaction List */
+        .interaction-list {
+            margin-top: 10px;
+        }
+
+        .interaction-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .interaction-date {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 5px;
+        }
+
+        .interaction-content {
+            font-size: 14px;
+            color: #333;
+        }
+
+        /* Strategy Report */
+        .strategy-report {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .strategy-report h4 {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .strategy-report p {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .strategy-report .label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            color: white;
+            padding: 20px;
+        }
+
+        .loading::after {
+            content: "加载中...";
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 14px;
+            z-index: 2000;
+            display: none;
+        }
+
+        .toast.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, 20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI社交模拟卡牌游戏</h1>
+            <p>记录你的社交故事，获取AI策略建议</p>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="搜索卡牌...">
+        </div>
+
+        <button class="btn-add" onclick="showAddCardModal()">+ 新增卡牌人物</button>
+
+        <div class="card-list" id="cardList">
+            <div class="empty-state">
+                <p>还没有卡牌人物</p>
+                <p>点击上方按钮添加你的第一个卡牌吧！</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Card Modal -->
+    <div class="modal" id="cardModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">新增卡牌人物</h2>
+                <button class="modal-close" onclick="closeModal('cardModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="cardForm">
+                    <input type="hidden" id="cardId">
+                    
+                    <div class="form-group">
+                        <label>照片URL（可选）</label>
+                        <input type="text" id="photoUrl" placeholder="输入图片链接">
+                    </div>
+
+                    <div class="form-group">
+                        <label>姓名 *</label>
+                        <input type="text" id="cardName" required placeholder="输入姓名">
+                    </div>
+
+                    <div class="form-group">
+                        <label>年龄</label>
+                        <input type="number" id="cardAge" placeholder="输入年龄">
+                    </div>
+
+                    <div class="form-group">
+                        <label>性别</label>
+                        <select id="cardGender">
+                            <option value="">请选择</option>
+                            <option value="男">男</option>
+                            <option value="女">女</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>职业</label>
+                        <input type="text" id="cardOccupation" placeholder="输入职业">
+                    </div>
+
+                    <div class="form-group">
+                        <label>性格（<100字）</label>
+                        <textarea id="cardPersonality" maxlength="100" placeholder="描述性格特征"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>能力（<100字）</label>
+                        <textarea id="cardAbility" maxlength="100" placeholder="描述能力特长"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>个人简介（<200字）</label>
+                        <textarea id="cardBio" maxlength="200" placeholder="简要介绍"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>人脉关系（<200字）</label>
+                        <textarea id="cardNetwork" maxlength="200" placeholder="描述人脉网络"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary">保存卡牌</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Detail Modal -->
+    <div class="modal" id="cardDetailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>卡牌详情</h2>
+                <button class="modal-close" onclick="closeModal('cardDetailModal')">&times;</button>
+            </div>
+            <div class="modal-body" id="cardDetailContent">
+                <!-- Card detail content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Interaction Modal -->
+    <div class="modal" id="interactionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>添加互动记录</h2>
+                <button class="modal-close" onclick="closeModal('interactionModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="interactionForm">
+                    <input type="hidden" id="interactionCardId">
+                    
+                    <div class="form-group">
+                        <label>互动内容 *</label>
+                        <textarea id="interactionContent" required placeholder="记录今天的互动..." rows="4"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-primary">保存互动记录</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        let currentCardId = null;
+
+        // Load cards on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCards();
+        });
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const searchTerm = e.target.value;
+            loadCards(searchTerm);
+        });
+
+        // Load cards
+        async function loadCards(search = '') {
+            try {
+                const url = search ? `${API_BASE}/cards?search=${encodeURIComponent(search)}` : `${API_BASE}/cards`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.success && data.data && data.data.length > 0) {
+                    renderCards(data.data);
+                } else {
+                    document.getElementById('cardList').innerHTML = `
+                        <div class="empty-state">
+                            <p>${search ? '没有找到匹配的卡牌' : '还没有卡牌人物'}</p>
+                            <p>${search ? '试试其他关键词' : '点击上方按钮添加你的第一个卡牌吧！'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading cards:', error);
+                showToast('加载卡牌失败');
+            }
+        }
+
+        // Render cards
+        function renderCards(cards) {
+            const cardList = document.getElementById('cardList');
+            cardList.innerHTML = cards.map(card => {
+                const tags = [];
+                if (card.occupation) tags.push(card.occupation);
+                if (card.age) tags.push(`${card.age}岁`);
+                if (card.gender) tags.push(card.gender);
+
+                const avatar = card.photo_url 
+                    ? `<img src="${card.photo_url}" alt="${card.name}">`
+                    : card.name.charAt(0);
+
+                return `
+                    <div class="card" onclick="showCardDetail(${card.id})">
+                        <div class="card-header">
+                            <div class="card-avatar">${avatar}</div>
+                            <div class="card-info">
+                                <h3>${card.name}</h3>
+                                <p>${card.bio || '暂无简介'}</p>
+                            </div>
+                        </div>
+                        ${tags.length > 0 ? `
+                            <div class="card-tags">
+                                ${tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Show add card modal
+        function showAddCardModal() {
+            document.getElementById('modalTitle').textContent = '新增卡牌人物';
+            document.getElementById('cardForm').reset();
+            document.getElementById('cardId').value = '';
+            showModal('cardModal');
+        }
+
+        // Show edit card modal
+        async function showEditCard(cardId) {
+            try {
+                const response = await fetch(`${API_BASE}/cards/${cardId}`);
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    const card = data.data;
+                    document.getElementById('modalTitle').textContent = '编辑卡牌人物';
+                    document.getElementById('cardId').value = card.id;
+                    document.getElementById('photoUrl').value = card.photo_url || '';
+                    document.getElementById('cardName').value = card.name || '';
+                    document.getElementById('cardAge').value = card.age || '';
+                    document.getElementById('cardGender').value = card.gender || '';
+                    document.getElementById('cardOccupation').value = card.occupation || '';
+                    document.getElementById('cardPersonality').value = card.personality || '';
+                    document.getElementById('cardAbility').value = card.ability || '';
+                    document.getElementById('cardBio').value = card.bio || '';
+                    document.getElementById('cardNetwork').value = card.network || '';
+                    showModal('cardModal');
+                }
+            } catch (error) {
+                console.error('Error loading card:', error);
+                showToast('加载卡牌详情失败');
+            }
+        }
+
+        // Handle card form submit
+        document.getElementById('cardForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const cardId = document.getElementById('cardId').value;
+            const cardData = {
+                photo_url: document.getElementById('photoUrl').value || null,
+                name: document.getElementById('cardName').value,
+                age: document.getElementById('cardAge').value ? parseInt(document.getElementById('cardAge').value) : null,
+                gender: document.getElementById('cardGender').value || null,
+                occupation: document.getElementById('cardOccupation').value || null,
+                personality: document.getElementById('cardPersonality').value || null,
+                ability: document.getElementById('cardAbility').value || null,
+                bio: document.getElementById('cardBio').value || null,
+                network: document.getElementById('cardNetwork').value || null
+            };
+
+            try {
+                const url = cardId ? `${API_BASE}/cards/${cardId}` : `${API_BASE}/cards`;
+                const method = cardId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cardData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast(cardId ? '卡牌更新成功' : '卡牌创建成功');
+                    closeModal('cardModal');
+                    loadCards();
+                    if (cardId) {
+                        showCardDetail(cardId);
+                    }
+                } else {
+                    showToast(data.message || '操作失败');
+                }
+            } catch (error) {
+                console.error('Error saving card:', error);
+                showToast('保存卡牌失败');
+            }
+        });
+
+        // Show card detail
+        async function showCardDetail(cardId) {
+            currentCardId = cardId;
+            
+            try {
+                const [cardResponse, interactionsResponse, strategyResponse] = await Promise.all([
+                    fetch(`${API_BASE}/cards/${cardId}`),
+                    fetch(`${API_BASE}/cards/${cardId}/interactions`),
+                    fetch(`${API_BASE}/cards/${cardId}/strategy`)
+                ]);
+
+                const cardData = await cardResponse.json();
+                const interactionsData = await interactionsResponse.json();
+                const strategyData = await strategyResponse.json();
+
+                if (cardData.success && cardData.data) {
+                    const card = cardData.data;
+                    const avatar = card.photo_url 
+                        ? `<img src="${card.photo_url}" alt="${card.name}">`
+                        : card.name.charAt(0);
+
+                    const meta = [card.age ? `${card.age}岁` : null, card.gender, card.occupation].filter(Boolean).join(' | ');
+
+                    document.getElementById('cardDetailContent').innerHTML = `
+                        <div class="card-detail-avatar">${avatar}</div>
+                        <div class="card-detail-name">${card.name}</div>
+                        <div class="card-detail-meta">${meta}</div>
+
+                        ${card.personality ? `
+                            <div class="card-detail-section">
+                                <h4>性格</h4>
+                                <p>${card.personality}</p>
+                            </div>
+                        ` : ''}
+
+                        ${card.ability ? `
+                            <div class="card-detail-section">
+                                <h4>能力</h4>
+                                <p>${card.ability}</p>
+                            </div>
+                        ` : ''}
+
+                        ${card.bio ? `
+                            <div class="card-detail-section">
+                                <h4>个人简介</h4>
+                                <p>${card.bio}</p>
+                            </div>
+                        ` : ''}
+
+                        ${card.network ? `
+                            <div class="card-detail-section">
+                                <h4>人脉关系</h4>
+                                <p>${card.network}</p>
+                            </div>
+                        ` : ''}
+
+                        ${strategyData.success && strategyData.data ? `
+                            <div class="strategy-report">
+                                <h4>🎯 社交策略报告</h4>
+                                <p><span class="label">当前评价：</span>${strategyData.data.current_evaluation}</p>
+                                <p><span class="label">今后策略：</span>${strategyData.data.future_strategy}</p>
+                            </div>
+                        ` : ''}
+
+                        ${interactionsData.success && interactionsData.data && interactionsData.data.length > 0 ? `
+                            <div class="card-detail-section">
+                                <h4>📝 互动记录 (${interactionsData.data.length})</h4>
+                                <div class="interaction-list">
+                                    ${interactionsData.data.map(interaction => `
+                                        <div class="interaction-item">
+                                            <div class="interaction-date">${formatDate(interaction.interaction_date)}</div>
+                                            <div class="interaction-content">${interaction.interaction_content}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <div class="card-detail-actions">
+                            <button class="btn-primary" onclick="showInteractionModal()">+ 记录互动</button>
+                            <button class="btn-primary" onclick="generateStrategyReport()">🎯 社交策略报告</button>
+                            <button class="btn-secondary" onclick="showEditCard(${card.id})">编辑</button>
+                            <button class="btn-danger" onclick="deleteCard(${card.id})">删除</button>
+                        </div>
+                    `;
+                    showModal('cardDetailModal');
+                }
+            } catch (error) {
+                console.error('Error loading card detail:', error);
+                showToast('加载卡牌详情失败');
+            }
+        }
+
+        // Show interaction modal
+        function showInteractionModal() {
+            document.getElementById('interactionForm').reset();
+            document.getElementById('interactionCardId').value = currentCardId;
+            showModal('interactionModal');
+        }
+
+        // Handle interaction form submit
+        document.getElementById('interactionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const interactionData = {
+                card_id: currentCardId,
+                interaction_content: document.getElementById('interactionContent').value
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/interactions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(interactionData)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('互动记录添加成功');
+                    closeModal('interactionModal');
+                    showCardDetail(currentCardId);
+                } else {
+                    showToast(data.message || '添加失败');
+                }
+            } catch (error) {
+                console.error('Error adding interaction:', error);
+                showToast('添加互动记录失败');
+            }
+        });
+
+        // Generate strategy report
+        async function generateStrategyReport() {
+            showToast('正在生成策略报告，请稍候...');
+            
+            try {
+                const response = await fetch(`${API_BASE}/cards/${currentCardId}/strategy/generate`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('策略报告生成成功');
+                    showCardDetail(currentCardId);
+                } else {
+                    showToast(data.message || '生成失败');
+                }
+            } catch (error) {
+                console.error('Error generating strategy:', error);
+                showToast('生成策略报告失败');
+            }
+        }
+
+        // Delete card
+        async function deleteCard(cardId) {
+            if (!confirm('确定要删除这张卡牌吗？此操作不可恢复。')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/cards/${cardId}`, {
+                    method: 'DELETE'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('卡牌删除成功');
+                    closeModal('cardDetailModal');
+                    loadCards();
+                } else {
+                    showToast(data.message || '删除失败');
+                }
+            } catch (error) {
+                console.error('Error deleting card:', error);
+                showToast('删除卡牌失败');
+            }
+        }
+
+        // Modal functions
+        function showModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('active');
+                }
+            });
+        });
+
+        // Toast function
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('active');
+            setTimeout(() => {
+                toast.classList.remove('active');
+            }, 3000);
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    </script>
+</body>
+</html>

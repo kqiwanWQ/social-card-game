@@ -103,6 +103,26 @@ async def root():
         }
 
 
+@app.get("/app.html")
+async def mobile_app():
+    """移动端APP页面"""
+    app_path = os.path.join(ASSETS_DIR, "app.html")
+    if os.path.exists(app_path):
+        return FileResponse(app_path)
+    else:
+        raise HTTPException(status_code=404, detail="app.html not found")
+
+
+@app.get("/index.html")
+async def desktop_app():
+    """桌面端页面"""
+    index_path = os.path.join(ASSETS_DIR, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    else:
+        raise HTTPException(status_code=404, detail="index.html not found")
+
+
 # ============ 卡牌管理接口 ============
 
 @app.get("/api/cards")

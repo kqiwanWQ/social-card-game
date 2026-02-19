@@ -1,0 +1,84 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        echo "Installing npm dependencies..."
+        npm install
+
+    - name: Install Capacitor CLI globally
+      run: |
+        echo "Installing Capacitor CLI..."
+        npm install -g @capacitor/cli
+
+    - name: Verify Capacitor config
+      run: |
+        echo "Checking capacitor.config.json..."
+        if [ -f "capacitor.config.json" ]; then
+          cat capacitor.config.json
+        else
+          echo "capacitor.config.json not found!"
+          exit 1
+        fi
+
+    - name: Add Android platform
+      run: |
+        echo "Adding Android platform..."
+        npx cap add android || echo "Android platform already exists"
+
+    - name: Sync Android project
+      run: |
+        echo "Syncing Android project..."
+        npx cap sync android
+
+    - name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        cache: 'gradle'
+
+    - name: Grant execute permission for gradlew
+      run: |
+        echo "Setting permissions for gradlew..."
+        cd android
+        chmod +x gradlew
+
+    - name: Build Debug APK
+      run: |
+        echo "Building Debug APK..."
+        cd android
+        ./gradlew assembleDebug --stacktrace
+
+    - name: Upload Debug APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: social-card-game-debug
+        path: android/app/build/outputs/apk/debug/app-debug.apk
+        retention-days: 30
+
+    - name: Display build info
+      run: |
+        echo "✅ Build completed successfully!"
+        echo ""
+        echo "APK Location: android/app/build/outputs/apk/debug/app-debug.apk"
+        echo ""
+        echo "Download the APK from the Actions artifacts section!"
